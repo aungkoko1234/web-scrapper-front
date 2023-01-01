@@ -1,9 +1,26 @@
+import { type } from "os";
+
 export interface Photo {
   id: number;
   albumId: number;
   title: string;
   thumbnailUrl: string;
   url: string;
+}
+
+export type ActionInterface = {
+  readonly type: string;
+  readonly payload?: unknown;
+};
+
+type UserProfile = {
+  id: string;
+  userName: string;
+  email: string;
+};
+export interface SignInResponseDto {
+  accessToken: string;
+  profile: UserProfile;
 }
 
 export interface Paginated<T> {

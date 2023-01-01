@@ -100,7 +100,7 @@ const CustomTable: React.FC<CustomTableProps> = ({
         </TableHead>
         <TableBody data-testid="table-body">
           {data.map((item, index) => (
-            <TableRow key={index}>
+            <TableRow key={item["id"] as string}>
               {headers.map(({ action = () => null, ...header }) => {
                 if (header.type === "action")
                   return (
