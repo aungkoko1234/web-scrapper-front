@@ -23,11 +23,16 @@ export interface SignInResponseDto {
   profile: UserProfile;
 }
 
-export interface Paginated<T> {
-  data: T[];
+type ResponeMeta = {
   currentPage: number;
-  limit: number;
-  total: number;
+  itemCount: number;
+  itemsPerPage: number;
+  totalItems: number;
+  totalPages: number;
+};
+export interface Paginated<T> {
+  items: T[];
+  meta: ResponeMeta;
 }
 
 export interface PaginationQuery {
@@ -35,6 +40,17 @@ export interface PaginationQuery {
   total?: number;
   limit: number;
   keyword?: string;
+}
+
+export interface KeyWordDto {
+  id: string;
+  name: string;
+  createdBy: string;
+  adsWordCount: number;
+  linkCount: number;
+  searchResultCount: number;
+  htmlSource: string;
+  created: string;
 }
 
 export type TableHeader = {

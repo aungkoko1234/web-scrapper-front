@@ -7,8 +7,13 @@ import { useRouter } from "next/router";
 import { useSelector } from "react-redux";
 import { selectAuthState } from "../store/authSlice";
 import { SearchBox } from "../components/control/SearchBoxComponent";
-import { useEffect } from "react";
-import { Button, Grid } from "@mui/material";
+import { useEffect, useState } from "react";
+import { Button, Card, Container, Grid } from "@mui/material";
+import { useGetKeyWords } from "../services/keywords";
+import PaginationComponent from "../components/PaginationComponent";
+import SearchFilterForm from "../components/form/SearchFilterForm";
+import { Box } from "@mui/system";
+import DialogComponent from "../components/DialogComponent";
 
 interface KeywordDto {
   id: string;
@@ -19,77 +24,16 @@ interface KeywordDto {
   htmlSource: string;
 }
 
-const data = [
-  {
-    id: 1,
-    keyword: "games",
-    totalAdsword: 4,
-    totalLinks: 3,
-    totalSearchResults: 10000,
-  },
-  {
-    id: 2,
-    keyword: "travel and tours",
-    totalAdsword: 4,
-    totalLinks: 5,
-    totalSearchResults: 10000,
-  },
-  {
-    id: 3,
-    keyword: "air tickets",
-    totalAdsword: 4,
-    totalLinks: 3,
-    totalSearchResults: 10000,
-  },
-  {
-    id: 4,
-    keyword: "flights",
-    totalAdsword: 5,
-    totalLinks: 30,
-    totalSearchResults: 100000,
-  },
-  // {
-  //   id: 5,
-  //   keyword: "booking",
-  //   totalAdsword: 5,
-  //   totalLinks: 23,
-  //   totalSearchResults: 100000,
-  // },
-  // {
-  //   id: 6,
-  //   keyword: "travel and tours",
-  //   totalAdsword: 4,
-  //   totalLinks: 5,
-  //   totalSearchResults: 10000,
-  // },
-  // {
-  //   id: 7,
-  //   keyword: "air tickets",
-  //   totalAdsword: 4,
-  //   totalLinks: 3,
-  //   totalSearchResults: 10000,
-  // },
-  // {
-  //   id: 8,
-  //   keyword: "flights",
-  //   totalAdsword: 5,
-  //   totalLinks: 30,
-  //   totalSearchResults: 100000,
-  // },
-  // {
-  //   id: 9,
-  //   keyword: "booking",
-  //   totalAdsword: 5,
-  //   totalLinks: 23,
-  //   totalSearchResults: 100000,
-  // },
-];
 export default function Home() {
   const router = useRouter();
   const query = router.query;
+  const [isOpen, setOpen] = useState<boolean>(false);
+  const [htmlSource, setHtmlSource] = useState<string | undefined>(undefined);
   const authState = useSelector(selectAuthState);
   const handleLinkClick = (data: unknown) => {
-    router.push("/sign-in");
+    const keyword = data as KeywordDto;
+    setOpen(true);
+    setHtmlSource(keyword.htmlSource);
   };
 
   const headers: TableHeader[] = [
@@ -100,25 +44,25 @@ export default function Home() {
       type: "text",
     },
     {
-      name: "keyword",
+      name: "name",
       title: "#Keyword",
       align: "left",
       type: "block",
     },
     {
-      name: "totalAdsword",
+      name: "adsWordCount",
       title: "Ads Word Count",
       align: "left",
       type: "text",
     },
     {
-      name: "totalLinks",
+      name: "linkCount",
       title: "Link Count",
       align: "left",
       type: "text",
     },
     {
-      name: "totalSearchResults",
+      name: "searchResultCount",
       title: "Search Results",
       align: "left",
       type: "text",
@@ -136,6 +80,28 @@ export default function Home() {
       router.push("/sign-in");
     }
   }, [authState, router]);
+  const {
+    data: keywords,
+    error,
+    isValidating,
+  } = useGetKeyWords({
+    keyword: query.keyword as string,
+    page: query.page as unknown as number,
+    limit: 10,
+  });
+  const handlePaginationChange = (value: number) => {
+    const qParams: { page?: string } = {};
+    if (value) {
+      qParams.page = value.toString();
+    } else {
+      delete query.page;
+    }
+    const urlSearchParams = { ...query, ...qParams } as Record<string, string>;
+    void router.replace({
+      pathname: location.pathname,
+      search: new URLSearchParams(urlSearchParams).toString(),
+    });
+  };
   return (
     <>
       <Head>
@@ -152,31 +118,57 @@ export default function Home() {
           alignItems="center"
           my={2}
         >
-          <Grid item xs={12} md={8}>
-            <SearchBox
-              onPressEnter={(keyword) =>
-                router.replace({
-                  pathname: location.pathname,
-                  search: new URLSearchParams({
-                    ...query,
-                    keyword,
-                  }).toString(),
-                })
-              }
-            />
+          <Grid item xs={8} md={8}>
+            <Box
+              sx={{
+                display: "flex",
+                alignContent: "center",
+                alignItems: "center",
+                py: 3,
+                px: 2,
+              }}
+            >
+              <SearchFilterForm
+                initialValues={{ keyword: "" }}
+                placeholder="Type your search Keyword here ..."
+              />
+            </Box>
           </Grid>
-          <Grid item xs={12} md={2}>
+          <Grid item xs={2} md={2}>
             <Button
               variant="contained"
               type="button"
               fullWidth
               // disabled={isLoading}
             >
-              Upload Keyword File
+              Upload
             </Button>
           </Grid>
         </Grid>
-        <CustomTable headers={headers} isLoading={false} data={data} />
+
+        <CustomTable
+          headers={headers}
+          isLoading={isValidating}
+          data={(keywords?.items as unknown as Record<string, unknown>[]) || []}
+        />
+
+        <PaginationComponent
+          count={keywords ? keywords?.meta.totalPages : 0}
+          current={keywords ? keywords.meta.currentPage : 1}
+          size="medium"
+          onChange={handlePaginationChange}
+        />
+        <DialogComponent
+          isOpen={isOpen}
+          title="HTML SOurce"
+          onClose={() => {
+            setOpen(false);
+          }}
+        >
+          <Card>
+            <div dangerouslySetInnerHTML={{ __html: htmlSource || "" }}></div>
+          </Card>
+        </DialogComponent>
       </main>
     </>
   );
