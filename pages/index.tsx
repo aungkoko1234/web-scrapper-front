@@ -1,10 +1,14 @@
 import Head from "next/head";
-import Image from "next/image";
 import styles from "../styles/Home.module.scss";
 import Header from "../components/Header";
 import CustomTable from "../components/CustomTable";
 import { TableHeader } from "../lib/interface";
 import { useRouter } from "next/router";
+import { useSelector } from "react-redux";
+import { selectAuthState } from "../store/authSlice";
+import { SearchBox } from "../components/control/SearchBoxComponent";
+import { useEffect } from "react";
+import { Button, Grid } from "@mui/material";
 
 interface KeywordDto {
   id: string;
@@ -44,44 +48,46 @@ const data = [
     totalLinks: 30,
     totalSearchResults: 100000,
   },
-  {
-    id: 5,
-    keyword: "booking",
-    totalAdsword: 5,
-    totalLinks: 23,
-    totalSearchResults: 100000,
-  },
-  {
-    id: 6,
-    keyword: "travel and tours",
-    totalAdsword: 4,
-    totalLinks: 5,
-    totalSearchResults: 10000,
-  },
-  {
-    id: 7,
-    keyword: "air tickets",
-    totalAdsword: 4,
-    totalLinks: 3,
-    totalSearchResults: 10000,
-  },
-  {
-    id: 8,
-    keyword: "flights",
-    totalAdsword: 5,
-    totalLinks: 30,
-    totalSearchResults: 100000,
-  },
-  {
-    id: 9,
-    keyword: "booking",
-    totalAdsword: 5,
-    totalLinks: 23,
-    totalSearchResults: 100000,
-  },
+  // {
+  //   id: 5,
+  //   keyword: "booking",
+  //   totalAdsword: 5,
+  //   totalLinks: 23,
+  //   totalSearchResults: 100000,
+  // },
+  // {
+  //   id: 6,
+  //   keyword: "travel and tours",
+  //   totalAdsword: 4,
+  //   totalLinks: 5,
+  //   totalSearchResults: 10000,
+  // },
+  // {
+  //   id: 7,
+  //   keyword: "air tickets",
+  //   totalAdsword: 4,
+  //   totalLinks: 3,
+  //   totalSearchResults: 10000,
+  // },
+  // {
+  //   id: 8,
+  //   keyword: "flights",
+  //   totalAdsword: 5,
+  //   totalLinks: 30,
+  //   totalSearchResults: 100000,
+  // },
+  // {
+  //   id: 9,
+  //   keyword: "booking",
+  //   totalAdsword: 5,
+  //   totalLinks: 23,
+  //   totalSearchResults: 100000,
+  // },
 ];
 export default function Home() {
   const router = useRouter();
+  const query = router.query;
+  const authState = useSelector(selectAuthState);
   const handleLinkClick = (data: unknown) => {
     router.push("/sign-in");
   };
@@ -125,6 +131,11 @@ export default function Home() {
       action: handleLinkClick,
     },
   ];
+  useEffect(() => {
+    if (!authState.isAuthenticated) {
+      router.push("/sign-in");
+    }
+  }, [authState, router]);
   return (
     <>
       <Head>
@@ -133,8 +144,38 @@ export default function Home() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
+      <Header />
       <main className={styles.main}>
-        <Header />
+        <Grid
+          container
+          justifyContent={"space-between"}
+          alignItems="center"
+          my={2}
+        >
+          <Grid item xs={12} md={8}>
+            <SearchBox
+              onPressEnter={(keyword) =>
+                router.replace({
+                  pathname: location.pathname,
+                  search: new URLSearchParams({
+                    ...query,
+                    keyword,
+                  }).toString(),
+                })
+              }
+            />
+          </Grid>
+          <Grid item xs={12} md={2}>
+            <Button
+              variant="contained"
+              type="button"
+              fullWidth
+              // disabled={isLoading}
+            >
+              Upload Keyword File
+            </Button>
+          </Grid>
+        </Grid>
         <CustomTable headers={headers} isLoading={false} data={data} />
       </main>
     </>
