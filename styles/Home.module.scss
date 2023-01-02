@@ -1,8 +1,10 @@
+$color-primary: #0070f3;
 .main {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   align-items: center;
+  overflow-y: scroll;
   padding: 6rem;
   min-height: 100vh;
 }
@@ -179,6 +181,15 @@
     padding: 4rem;
   }
 
+  .main {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2rem;
+    min-height: 100vh;
+  }
+
   .grid {
     grid-template-columns: 1fr;
     margin-bottom: 120px;
@@ -275,4 +286,9 @@
   to {
     transform: rotate(0deg);
   }
+}
+
+.error {
+  font-size: 12px;
+  color: red;
 }
