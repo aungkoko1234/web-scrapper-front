@@ -1,12 +1,12 @@
 import Head from "next/head";
 import styles from "../styles/Home.module.scss";
 import Header from "../components/Header";
+import React, { useCallback } from "react";
 import CustomTable from "../components/CustomTable";
 import { TableHeader } from "../lib/interface";
 import { useRouter } from "next/router";
 import { useSelector } from "react-redux";
 import { selectAuthState } from "../store/authSlice";
-import { SearchBox } from "../components/control/SearchBoxComponent";
 import { useEffect, useState } from "react";
 import { Button, Card, Container, Grid } from "@mui/material";
 import { useGetKeyWords } from "../services/keywords";
@@ -14,6 +14,7 @@ import PaginationComponent from "../components/PaginationComponent";
 import SearchFilterForm from "../components/form/SearchFilterForm";
 import { Box } from "@mui/system";
 import DialogComponent from "../components/DialogComponent";
+import { apiClient } from "../lib/httpClient";
 
 interface KeywordDto {
   id: string;
@@ -28,6 +29,11 @@ export default function Home() {
   const router = useRouter();
   const query = router.query;
   const [isOpen, setOpen] = useState<boolean>(false);
+  const [showUpload, setShowUploadDialog] = useState<boolean>(false);
+  const [uploadedFile, setUploadedFile] = useState<File | undefined>(undefined);
+  const [createObjectURL, setCreateObjectURL] = useState<string | undefined>(
+    undefined
+  );
   const [htmlSource, setHtmlSource] = useState<string | undefined>(undefined);
   const authState = useSelector(selectAuthState);
   const handleLinkClick = (data: unknown) => {
@@ -89,6 +95,36 @@ export default function Home() {
     page: query.page as unknown as number,
     limit: 10,
   });
+  const uploadToClient = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      if (event?.target.files && event.target.files[0]) {
+        const i = event.target.files[0];
+        console.log("file", event?.target.files[0]);
+        setUploadedFile(i);
+        setCreateObjectURL(URL.createObjectURL(i));
+      }
+    },
+    []
+  );
+  const uploadToServer = async () => {
+    console.log("uploadFile", uploadedFile);
+    const body = new FormData();
+    body.append("keywords", uploadedFile as Blob);
+    const url = "/keywords/upload-file";
+    apiClient(
+      process.env.NEXT_PUBLIC_API_URL,
+      authState.accessToken as string,
+      true
+    )
+      .post(url, body)
+      .then((data) => {
+        const response = data.data?.data;
+        console.log("response", response);
+      })
+      .catch((error) => {
+        console.log("error", error);
+      });
+  };
   const handlePaginationChange = (value: number) => {
     const qParams: { page?: string } = {};
     if (value) {
@@ -140,6 +176,7 @@ export default function Home() {
               type="button"
               fullWidth
               // disabled={isLoading}
+              onClick={() => setShowUploadDialog(true)}
             >
               Upload
             </Button>
@@ -168,6 +205,23 @@ export default function Home() {
           <Card>
             <div dangerouslySetInnerHTML={{ __html: htmlSource || "" }}></div>
           </Card>
+        </DialogComponent>
+        <DialogComponent
+          isOpen={showUpload}
+          title="Upload Key Word File"
+          onClose={() => {
+            setShowUploadDialog(false);
+          }}
+        >
+          <input type="file" name="myImage" onChange={uploadToClient} />
+          <Button
+            variant="contained"
+            type="button"
+            fullWidth
+            onClick={() => uploadToServer()}
+          >
+            Send to server
+          </Button>
         </DialogComponent>
       </main>
     </>
