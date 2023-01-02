@@ -79,7 +79,6 @@ export default function SignIn() {
           userName: response.profile.userName,
         };
         dispatch(setAuthState(authData));
-        void window.localStorage.setItem("auth", JSON.stringify(authData));
         setLoading(false);
         router.push("/");
       })

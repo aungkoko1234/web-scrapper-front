@@ -1,7 +1,7 @@
 import axios from "axios";
 
 export const apiClient = (
-  baseURL = process.env.API_URL,
+  baseURL = process.env.API_URL || "http://localhost:3030/v1/api/",
   accessToken?: string,
   isMultiPart = false
 ) => {
