@@ -32,18 +32,6 @@ const headers = [
     action: () => {},
   },
 ];
-const mockData = [
-  {
-    id: 1,
-    title: "Testing 1",
-    thumbnailUrl: "https://via.placeholder.com/600/92c952",
-  },
-  {
-    id: 2,
-    title: "Testing 2",
-    thumbnailUrl: "https://via.placeholder.com/600/92c952",
-  },
-];
 // describe("Table View Component", () => {
 //   it("renders a Desktop Table View", () => {
 //     render(<DesktopTableViewComponent headers={headers} data={mockData} />);
