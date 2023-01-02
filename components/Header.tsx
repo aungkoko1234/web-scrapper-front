@@ -8,8 +8,10 @@ import AccountCircle from "@mui/icons-material/AccountCircle";
 import MenuItem from "@mui/material/MenuItem";
 import Menu from "@mui/material/Menu";
 import { useState } from "react";
+import { useRouter } from "next/router";
 
 export default function Header() {
+  const router = useRouter();
   const [auth, setAuth] = useState(true);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
@@ -59,21 +61,50 @@ export default function Header() {
               </IconButton>
               <Menu
                 id="menu-appbar"
+                PaperProps={{
+                  elevation: 0,
+                  sx: {
+                    overflow: "visible",
+                    filter: "drop-shadow(0px 2px 8px rgba(0,0,0,0.32))",
+                    mt: 1.5,
+                    "& .MuiAvatar-root": {
+                      width: 32,
+                      height: 32,
+                      ml: -0.5,
+                      mr: 1,
+                    },
+                    "&:before": {
+                      content: '""',
+                      display: "block",
+                      position: "absolute",
+                      left: "45%",
+                      top: 0,
+                      width: 10,
+                      height: 10,
+                      bgcolor: "background.paper",
+                      transform: "translateY(-50%) rotate(45deg)",
+                      zIndex: 0,
+                    },
+                  },
+                }}
+                transformOrigin={{ horizontal: "center", vertical: "top" }}
+                anchorOrigin={{ horizontal: "center", vertical: "bottom" }}
                 anchorEl={anchorEl}
-                anchorOrigin={{
-                  vertical: "top",
-                  horizontal: "right",
-                }}
-                keepMounted
-                transformOrigin={{
-                  vertical: "top",
-                  horizontal: "right",
-                }}
+                // anchorOrigin={{
+                //   vertical: "bottom",
+                //   horizontal: "right",
+                // }}
+                // keepMounted
+                // transformOrigin={{
+                //   vertical: "bottom",
+                //   horizontal: "right",
+                // }}
                 open={Boolean(anchorEl)}
                 onClose={handleClose}
               >
-                <MenuItem onClick={handleClose}>Profile</MenuItem>
-                <MenuItem onClick={handleClose}>My account</MenuItem>
+                <MenuItem onClick={() => router.push("/sign-in")}>
+                  Sign Out
+                </MenuItem>
               </Menu>
             </div>
           )}
