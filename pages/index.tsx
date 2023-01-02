@@ -1,14 +1,21 @@
 import Head from "next/head";
 import styles from "../styles/Home.module.scss";
 import Header from "../components/Header";
+import React, { useCallback } from "react";
 import CustomTable from "../components/CustomTable";
 import { TableHeader } from "../lib/interface";
 import { useRouter } from "next/router";
 import { useSelector } from "react-redux";
 import { selectAuthState } from "../store/authSlice";
-import { SearchBox } from "../components/control/SearchBoxComponent";
-import { useEffect } from "react";
-import { Button, Grid } from "@mui/material";
+import { useEffect, useState } from "react";
+import { Button, FormControl, Grid, Input, Snackbar } from "@mui/material";
+import { useGetKeyWords } from "../services/keywords";
+import PaginationComponent from "../components/PaginationComponent";
+import SearchFilterForm from "../components/form/SearchFilterForm";
+import { Box } from "@mui/system";
+import DialogComponent from "../components/DialogComponent";
+import { apiClient } from "../lib/httpClient";
+import { Action } from "../components/SnackbarAction";
 
 interface KeywordDto {
   id: string;
@@ -19,77 +26,24 @@ interface KeywordDto {
   htmlSource: string;
 }
 
-const data = [
-  {
-    id: 1,
-    keyword: "games",
-    totalAdsword: 4,
-    totalLinks: 3,
-    totalSearchResults: 10000,
-  },
-  {
-    id: 2,
-    keyword: "travel and tours",
-    totalAdsword: 4,
-    totalLinks: 5,
-    totalSearchResults: 10000,
-  },
-  {
-    id: 3,
-    keyword: "air tickets",
-    totalAdsword: 4,
-    totalLinks: 3,
-    totalSearchResults: 10000,
-  },
-  {
-    id: 4,
-    keyword: "flights",
-    totalAdsword: 5,
-    totalLinks: 30,
-    totalSearchResults: 100000,
-  },
-  // {
-  //   id: 5,
-  //   keyword: "booking",
-  //   totalAdsword: 5,
-  //   totalLinks: 23,
-  //   totalSearchResults: 100000,
-  // },
-  // {
-  //   id: 6,
-  //   keyword: "travel and tours",
-  //   totalAdsword: 4,
-  //   totalLinks: 5,
-  //   totalSearchResults: 10000,
-  // },
-  // {
-  //   id: 7,
-  //   keyword: "air tickets",
-  //   totalAdsword: 4,
-  //   totalLinks: 3,
-  //   totalSearchResults: 10000,
-  // },
-  // {
-  //   id: 8,
-  //   keyword: "flights",
-  //   totalAdsword: 5,
-  //   totalLinks: 30,
-  //   totalSearchResults: 100000,
-  // },
-  // {
-  //   id: 9,
-  //   keyword: "booking",
-  //   totalAdsword: 5,
-  //   totalLinks: 23,
-  //   totalSearchResults: 100000,
-  // },
-];
 export default function Home() {
   const router = useRouter();
   const query = router.query;
+  const [isOpen, setOpen] = useState<boolean>(false);
+  const [showUpload, setShowUploadDialog] = useState<boolean>(false);
+  const [uploadedFile, setUploadedFile] = useState<File | undefined>(undefined);
+  const [uploadError, setUploadError] = useState<string | undefined>(undefined);
+  const [createObjectURL, setCreateObjectURL] = useState<string | undefined>(
+    undefined
+  );
+  const [showMessage, setShowMessage] = useState<boolean>(false);
+  const [message, setMessage] = useState<string>("");
+  const [htmlSource, setHtmlSource] = useState<string | undefined>(undefined);
   const authState = useSelector(selectAuthState);
   const handleLinkClick = (data: unknown) => {
-    router.push("/sign-in");
+    const keyword = data as KeywordDto;
+    setOpen(true);
+    setHtmlSource(keyword.htmlSource);
   };
 
   const headers: TableHeader[] = [
@@ -100,25 +54,25 @@ export default function Home() {
       type: "text",
     },
     {
-      name: "keyword",
+      name: "name",
       title: "#Keyword",
       align: "left",
       type: "block",
     },
     {
-      name: "totalAdsword",
+      name: "adsWordCount",
       title: "Ads Word Count",
       align: "left",
       type: "text",
     },
     {
-      name: "totalLinks",
+      name: "linkCount",
       title: "Link Count",
       align: "left",
       type: "text",
     },
     {
-      name: "totalSearchResults",
+      name: "searchResultCount",
       title: "Search Results",
       align: "left",
       type: "text",
@@ -136,6 +90,69 @@ export default function Home() {
       router.push("/sign-in");
     }
   }, [authState, router]);
+  const {
+    data: keywords,
+    error,
+    isValidating,
+  } = useGetKeyWords({
+    keyword: query.keyword as string,
+    page: query.page as unknown as number,
+    limit: 10,
+  });
+  const uploadToClient = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      if (event?.target.files && event.target.files[0]) {
+        const uploadFile = event.target.files[0];
+        if (uploadFile.type === "text/csv") {
+          setUploadError(undefined);
+          setUploadedFile(uploadFile);
+          setCreateObjectURL(URL.createObjectURL(uploadFile));
+        } else {
+          setUploadError("Key of file needs to be CSV extension.");
+        }
+      }
+    },
+    []
+  );
+
+  const uploadToServer = async () => {
+    if (uploadedFile) {
+      const body = new FormData();
+      body.append("keywords", uploadedFile as Blob);
+      const url = "/keywords/upload-file";
+      apiClient(
+        process.env.NEXT_PUBLIC_API_URL,
+        authState.accessToken as string,
+        true
+      )
+        .post(url, body)
+        .then((data) => {
+          const response = data.data?.data;
+          setMessage("Keyword file is uploaded successfully");
+          setShowMessage(true);
+          setUploadedFile(undefined);
+          setShowUploadDialog(false);
+        })
+        .catch((error) => {
+          console.log("error", error);
+        });
+    } else {
+      setUploadError("Keyword file is required");
+    }
+  };
+  const handlePaginationChange = (value: number) => {
+    const qParams: { page?: string } = {};
+    if (value) {
+      qParams.page = value.toString();
+    } else {
+      delete query.page;
+    }
+    const urlSearchParams = { ...query, ...qParams } as Record<string, string>;
+    void router.replace({
+      pathname: location.pathname,
+      search: new URLSearchParams(urlSearchParams).toString(),
+    });
+  };
   return (
     <>
       <Head>
@@ -153,17 +170,20 @@ export default function Home() {
           my={2}
         >
           <Grid item xs={12} md={8}>
-            <SearchBox
-              onPressEnter={(keyword) =>
-                router.replace({
-                  pathname: location.pathname,
-                  search: new URLSearchParams({
-                    ...query,
-                    keyword,
-                  }).toString(),
-                })
-              }
-            />
+            <Box
+              sx={{
+                display: "flex",
+                alignContent: "center",
+                alignItems: "center",
+                py: 3,
+                px: 2,
+              }}
+            >
+              <SearchFilterForm
+                initialValues={{ keyword: "" }}
+                placeholder="Type your search Keyword here ..."
+              />
+            </Box>
           </Grid>
           <Grid item xs={12} md={2}>
             <Button
@@ -171,12 +191,65 @@ export default function Home() {
               type="button"
               fullWidth
               // disabled={isLoading}
+              onClick={() => setShowUploadDialog(true)}
             >
-              Upload Keyword File
+              Upload
             </Button>
           </Grid>
         </Grid>
-        <CustomTable headers={headers} isLoading={false} data={data} />
+
+        <CustomTable
+          headers={headers}
+          isLoading={isValidating}
+          data={(keywords?.items as unknown as Record<string, unknown>[]) || []}
+        />
+
+        <PaginationComponent
+          count={keywords ? keywords?.meta.totalPages : 0}
+          current={keywords ? keywords.meta.currentPage : 1}
+          size="medium"
+          onChange={handlePaginationChange}
+        />
+        <DialogComponent
+          isOpen={isOpen}
+          title="HTML SOurce"
+          onClose={() => {
+            setOpen(false);
+          }}
+        >
+          <div dangerouslySetInnerHTML={{ __html: htmlSource || "" }}></div>
+        </DialogComponent>
+        <DialogComponent
+          isOpen={showUpload}
+          title="Upload Key Word File"
+          onClose={() => {
+            setShowUploadDialog(false);
+          }}
+        >
+          <FormControl error={!!uploadError}>
+            <Input type="file" name="uploadFile" onChange={uploadToClient} />
+            <span className={styles.error}>{uploadError}</span>
+          </FormControl>
+
+          <Button
+            sx={{ mt: 2 }}
+            variant="contained"
+            type="button"
+            disabled={!!uploadError}
+            fullWidth
+            onClick={() => uploadToServer()}
+          >
+            Upload
+          </Button>
+        </DialogComponent>
+        <Snackbar
+          anchorOrigin={{ vertical: "top", horizontal: "center" }}
+          autoHideDuration={5000}
+          action={<Action handleClose={() => setShowMessage(false)} />}
+          open={showMessage}
+          onClose={() => setShowMessage(false)}
+          message={message}
+        />
       </main>
     </>
   );

@@ -1,6 +1,6 @@
 import "../styles/globals.scss";
 import { SWRConfig } from "swr";
-import { ThemeProvider, CssBaseline, createTheme } from "@mui/material";
+import { ThemeProvider, CssBaseline } from "@mui/material";
 import theme from "../theme";
 import type { AppProps } from "next/app";
 import { wrapper } from "../store/store";
@@ -17,16 +17,16 @@ export default function App({ Component, ...rest }: AppProps) {
         <meta name="description" content="BAP News" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <Provider store={store}>
-        <SWRConfig value={{ onError: (error: Error) => console.log(error) }}>
+      <SWRConfig value={{ onError: (error: Error) => console.log(error) }}>
+        <Provider store={store}>
           <ThemeProvider theme={theme}>
             <CssBaseline />
             {/* <Layout> */}
             <Component {...pageProps} />
             {/* </Layout> */}
           </ThemeProvider>
-        </SWRConfig>
-      </Provider>
+        </Provider>
+      </SWRConfig>
     </>
   );
 }

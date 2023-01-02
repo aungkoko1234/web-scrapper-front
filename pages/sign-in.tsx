@@ -72,14 +72,14 @@ export default function SignIn() {
       .then((data) => {
         const response = data.data?.data as SignInResponseDto;
         console.log("response", response);
-        dispatch(
-          setAuthState({
-            isAuthenticated: true,
-            accessToken: response.accessToken,
-            email: response.profile.email,
-            userName: response.profile.userName,
-          })
-        );
+        const authData = {
+          isAuthenticated: true,
+          accessToken: response.accessToken,
+          email: response.profile.email,
+          userName: response.profile.userName,
+        };
+        dispatch(setAuthState(authData));
+        void window.localStorage.setItem("auth", JSON.stringify(authData));
         setLoading(false);
         router.push("/");
       })
