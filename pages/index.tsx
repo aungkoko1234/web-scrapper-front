@@ -8,13 +8,14 @@ import { useRouter } from "next/router";
 import { useSelector } from "react-redux";
 import { selectAuthState } from "../store/authSlice";
 import { useEffect, useState } from "react";
-import { Button, Card, Container, Grid } from "@mui/material";
+import { Button, FormControl, Grid, Input, Snackbar } from "@mui/material";
 import { useGetKeyWords } from "../services/keywords";
 import PaginationComponent from "../components/PaginationComponent";
 import SearchFilterForm from "../components/form/SearchFilterForm";
 import { Box } from "@mui/system";
 import DialogComponent from "../components/DialogComponent";
 import { apiClient } from "../lib/httpClient";
+import { Action } from "../components/SnackbarAction";
 
 interface KeywordDto {
   id: string;
@@ -31,9 +32,12 @@ export default function Home() {
   const [isOpen, setOpen] = useState<boolean>(false);
   const [showUpload, setShowUploadDialog] = useState<boolean>(false);
   const [uploadedFile, setUploadedFile] = useState<File | undefined>(undefined);
+  const [uploadError, setUploadError] = useState<string | undefined>(undefined);
   const [createObjectURL, setCreateObjectURL] = useState<string | undefined>(
     undefined
   );
+  const [showMessage, setShowMessage] = useState<boolean>(false);
+  const [message, setMessage] = useState<string>("");
   const [htmlSource, setHtmlSource] = useState<string | undefined>(undefined);
   const authState = useSelector(selectAuthState);
   const handleLinkClick = (data: unknown) => {
@@ -98,32 +102,43 @@ export default function Home() {
   const uploadToClient = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       if (event?.target.files && event.target.files[0]) {
-        const i = event.target.files[0];
-        console.log("file", event?.target.files[0]);
-        setUploadedFile(i);
-        setCreateObjectURL(URL.createObjectURL(i));
+        const uploadFile = event.target.files[0];
+        if (uploadFile.type === "text/csv") {
+          setUploadError(undefined);
+          setUploadedFile(uploadFile);
+          setCreateObjectURL(URL.createObjectURL(uploadFile));
+        } else {
+          setUploadError("Key of file needs to be CSV extension.");
+        }
       }
     },
     []
   );
+
   const uploadToServer = async () => {
-    console.log("uploadFile", uploadedFile);
-    const body = new FormData();
-    body.append("keywords", uploadedFile as Blob);
-    const url = "/keywords/upload-file";
-    apiClient(
-      process.env.NEXT_PUBLIC_API_URL,
-      authState.accessToken as string,
-      true
-    )
-      .post(url, body)
-      .then((data) => {
-        const response = data.data?.data;
-        console.log("response", response);
-      })
-      .catch((error) => {
-        console.log("error", error);
-      });
+    if (uploadedFile) {
+      const body = new FormData();
+      body.append("keywords", uploadedFile as Blob);
+      const url = "/keywords/upload-file";
+      apiClient(
+        process.env.NEXT_PUBLIC_API_URL,
+        authState.accessToken as string,
+        true
+      )
+        .post(url, body)
+        .then((data) => {
+          const response = data.data?.data;
+          setMessage("Keyword file is uploaded successfully");
+          setShowMessage(true);
+          setUploadedFile(undefined);
+          setShowUploadDialog(false);
+        })
+        .catch((error) => {
+          console.log("error", error);
+        });
+    } else {
+      setUploadError("Keyword file is required");
+    }
   };
   const handlePaginationChange = (value: number) => {
     const qParams: { page?: string } = {};
@@ -154,7 +169,7 @@ export default function Home() {
           alignItems="center"
           my={2}
         >
-          <Grid item xs={8} md={8}>
+          <Grid item xs={12} md={8}>
             <Box
               sx={{
                 display: "flex",
@@ -170,7 +185,7 @@ export default function Home() {
               />
             </Box>
           </Grid>
-          <Grid item xs={2} md={2}>
+          <Grid item xs={12} md={2}>
             <Button
               variant="contained"
               type="button"
@@ -202,9 +217,7 @@ export default function Home() {
             setOpen(false);
           }}
         >
-          <Card>
-            <div dangerouslySetInnerHTML={{ __html: htmlSource || "" }}></div>
-          </Card>
+          <div dangerouslySetInnerHTML={{ __html: htmlSource || "" }}></div>
         </DialogComponent>
         <DialogComponent
           isOpen={showUpload}
@@ -213,16 +226,30 @@ export default function Home() {
             setShowUploadDialog(false);
           }}
         >
-          <input type="file" name="myImage" onChange={uploadToClient} />
+          <FormControl error={!!uploadError}>
+            <Input type="file" name="uploadFile" onChange={uploadToClient} />
+            <span className={styles.error}>{uploadError}</span>
+          </FormControl>
+
           <Button
+            sx={{ mt: 2 }}
             variant="contained"
             type="button"
+            disabled={!!uploadError}
             fullWidth
             onClick={() => uploadToServer()}
           >
-            Send to server
+            Upload
           </Button>
         </DialogComponent>
+        <Snackbar
+          anchorOrigin={{ vertical: "top", horizontal: "center" }}
+          autoHideDuration={5000}
+          action={<Action handleClose={() => setShowMessage(false)} />}
+          open={showMessage}
+          onClose={() => setShowMessage(false)}
+          message={message}
+        />
       </main>
     </>
   );

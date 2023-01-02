@@ -1,6 +1,6 @@
 import "../styles/globals.scss";
 import { SWRConfig } from "swr";
-import { ThemeProvider, CssBaseline, createTheme } from "@mui/material";
+import { ThemeProvider, CssBaseline } from "@mui/material";
 import theme from "../theme";
 import type { AppProps } from "next/app";
 import { wrapper } from "../store/store";

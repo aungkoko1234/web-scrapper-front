@@ -35,24 +35,24 @@ const CustomTable: React.FC<CustomTableProps> = ({
           key={index}
           sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
         >
-          {headers.map(({ type }) => {
+          {headers.map(({ type }, index) => {
             switch (type) {
               case "text":
                 return (
-                  <TableCell key="text" component="th" scope="row">
+                  <TableCell key={type + index} component="th" scope="row">
                     <Skeleton variant="text" sx={{ fontSize: "1rem" }} />
                   </TableCell>
                 );
               case "block":
                 return (
-                  <TableCell key="block" component="th" scope="row">
+                  <TableCell key={type + index} component="th" scope="row">
                     <Skeleton width={410} />
                     <Skeleton width="80%" />
                   </TableCell>
                 );
               case "action":
                 return (
-                  <TableCell key="action" component="th" scope="row">
+                  <TableCell key={type + index} component="th" scope="row">
                     <Skeleton width={150} height={50} />
                   </TableCell>
                 );
@@ -100,7 +100,7 @@ const CustomTable: React.FC<CustomTableProps> = ({
         </TableHead>
         <TableBody data-testid="table-body">
           {data.map((item, index) => (
-            <TableRow key={item["id"] as string}>
+            <TableRow key={index}>
               {headers.map(({ action = () => null, ...header }) => {
                 if (header.type === "action")
                   return (
