@@ -159,6 +159,13 @@ export default function SignIn() {
                   </Grid>
                 </Form>
               </Formik>
+              <Grid container justifyContent="flex-end">
+                <Grid item>
+                  <Link href="/sign-up" variant="body2">
+                    Do not have an account? Sign up.
+                  </Link>
+                </Grid>
+              </Grid>
             </Box>
           </Box>
           <Snackbar

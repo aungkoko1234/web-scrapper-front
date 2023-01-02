@@ -12,7 +12,6 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     if (search) {
       url = url + `&search=${search}`;
     }
-    console.log("url", url);
     const response = await apiClient().get(url);
     return res.status(200).json(response.data.data);
   } catch (e) {
