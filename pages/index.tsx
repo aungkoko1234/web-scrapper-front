@@ -60,6 +60,12 @@ export default function Home() {
       type: "block",
     },
     {
+      name: "status",
+      title: "#Status",
+      align: "left",
+      type: "text",
+    },
+    {
       name: "adsWordCount",
       title: "Ads Word Count",
       align: "left",
